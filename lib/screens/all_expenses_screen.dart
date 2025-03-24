@@ -1,5 +1,8 @@
+//all_expenses_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pennywise/widgets/base_screen.dart';
+
 
 class AllExpensesScreen extends StatelessWidget {
   final List<Map<String, dynamic>> expenses;
@@ -8,13 +11,8 @@ class AllExpensesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text("All Expenses", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.black,
-        elevation: 0,
-      ),
+    return BaseScreen(
+      title: "All Expenses",
       body: ListView.builder(
         itemCount: expenses.length,
         itemBuilder: (context, index) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import '../models/expense.dart';
-import '../services/expense_service.dart';
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   @override
@@ -9,220 +8,245 @@ class AddExpenseScreen extends StatefulWidget {
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
-  final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
-  String _selectedCategory = "Food";
-  String _selectedPaymentMode = "Cash";
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
+  String? _selectedCategory = "Others";
   DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  int _currentIndex = 0;
+  TimeOfDay _selectedTime = TimeOfDay.fromDateTime(DateTime.now());
+  List<String> _categories = [];
 
-  void _saveExpense() {
-    if (_amountController.text.isEmpty) return;
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
 
-    final expense = Expense(
-      id: const Uuid().v4(),
-      title: _noteController.text.isEmpty ? 'No Note' : _noteController.text,
-      amount: double.tryParse(_amountController.text) ?? 0,
-      category: _selectedCategory,
-      date: _selectedDate,
+  void _loadCategories() async {
+    var box = await Hive.openBox('expenseCategories');
+    setState(() {
+      _categories = box.values.cast<String>().toList();
+      if (_categories.isEmpty) {
+        _categories = ["Others", "Food", "Transport", "Shopping"];
+      }
+    });
+  }
+
+  void _showCategorySelection() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(10),
+          height: 250,
+          child: ListView.builder(
+            itemCount: _categories.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(_categories[index], style: TextStyle(color: const Color.fromARGB(255, 255, 255, 255))),
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = _categories[index];
+                  });
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        );
+      },
     );
+  }
 
-    ExpenseService.addExpense(expense);
-    Navigator.pop(context);
+  Widget _buildCategorySelection() {
+    return InkWell(
+      onTap: _showCategorySelection,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Category", style: TextStyle(color: Colors.white)),
+            Row(
+              children: [
+                Text(_selectedCategory ?? "Select", style: TextStyle(color: Colors.white)),
+                Icon(Icons.arrow_drop_down, size: 20, color: Colors.white),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAmountInput() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey)),
+      ),
+      child: TextFormField(
+        controller: _amountController,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: "Amount",
+          labelStyle: TextStyle(color: Colors.white),
+          border: InputBorder.none,
+          prefixText: "₹ ",
+          prefixStyle: TextStyle(color: Colors.white),
+        ),
+        style: TextStyle(color: Colors.white, fontSize: 24), // Larger font for amount
+      ),
+    );
+  }
+
+  Widget _buildNoteInput() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey)),
+      ),
+      child: TextFormField(
+        controller: _noteController,
+        decoration: InputDecoration(
+          labelText: "Write a note",
+          labelStyle: TextStyle(color: Colors.white),
+          border: InputBorder.none,
+        ),
+        maxLines: 2, // Allow multiple lines for notes
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildDateTimePickers() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: _selectDate,
+          child: Text(
+            DateFormat('d MMM yyyy').format(_selectedDate), // Include year
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        InkWell(
+          onTap: _selectTime,
+          child: Text(
+            _selectedTime.format(context),
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectDate() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(data: ThemeData.dark(), child: child!);
+      },
+    );
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      builder: (BuildContext context, Widget? child) {
+        return Theme(data: ThemeData.dark(), child: child!);
+      },
+    );
+    if (pickedTime != null && pickedTime != _selectedTime) {
+      setState(() {
+        _selectedTime = pickedTime;
+      });
+    }
+  }
+
+  void _saveExpense() async {
+    String amount = _amountController.text.trim();
+    String note = _noteController.text.trim();
+
+    if (_selectedCategory == null || amount.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter all details")),
+      );
+      return;
+    }
+
+    var box = await Hive.openBox('expenses');
+    await box.add({
+      "category": _selectedCategory,
+      "amount": amount,
+      "note": note,
+      "date": _selectedDate.toIso8601String(),
+      "time": _selectedTime.format(context),
+    });
+
+    print("Expense Saved:");
+    print("Category: $_selectedCategory");
+    print("Amount: $amount");
+    print("Note: $note");
+    print("Date: $_selectedDate");
+    print("Time: $_selectedTime");
+
+    _amountController.clear();
+    _noteController.clear();
+    setState(() {
+      _selectedCategory = "Others";
+      _selectedDate = DateTime.now();
+      _selectedTime = TimeOfDay.fromDateTime(DateTime.now());
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Expense Saved Successfully!")),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: Text('Add Expense'),
+        title: const Text("Add transaction", style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.grey[900],
+        iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTransactionTabs(),
-              SizedBox(height: 20),
-              _buildDateTimeRow(),
-              SizedBox(height: 20),
-              _buildAmountInput(),
-              SizedBox(height: 20),
-              _buildCategorySelection(),
-              SizedBox(height: 20),
-              _buildNoteInput(),
-
-              SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _saveExpense,
-                child: Text("Save Expense"),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: _buildBottomNavBar(),
-    );
-  }
-
-  Widget _buildTransactionTabs() {
-    return Row(
-      children: [
-        _buildTab('Expense', true),
-        _buildTab('Income', false),
-        _buildTab('Transfer', false),
-      ],
-    );
-  }
-
-  Widget _buildTab(String title, bool isActive) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.grey[800] : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: Text(
-            title,
-            style: TextStyle(color: isActive ? Colors.white : Colors.grey),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateTimeRow() {
-    return Row(
-      children: [
-        Icon(Icons.calendar_today, color: Colors.white),
-        SizedBox(width: 10),
-        Text('${_selectedDate.day} ${_getMonth(_selectedDate.month)} ${_selectedDate.year}', style: TextStyle(color: Colors.white)),
-        Spacer(),
-        Icon(Icons.access_time, color: Colors.white),
-        SizedBox(width: 10),
-        Text('${_selectedTime.format(context)}', style: TextStyle(color: Colors.white)),
-      ],
-    );
-  }
-
-  Widget _buildAmountInput() {
-    return Row(
-      children: [
-        Text('₹', style: TextStyle(color: Colors.white, fontSize: 20)),
-        SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'Amount',
-              hintStyle: TextStyle(color: Colors.grey),
-              border: InputBorder.none,
-            ),
-            style: TextStyle(color: Colors.white, fontSize: 20),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategorySelection() {
-    return _buildSelectionTile('Category', _selectedCategory, Icons.category);
-  }
-
-  Widget _buildPaymentModeSelection() {
-    return _buildSelectionTile('Payment Mode', _selectedPaymentMode, Icons.credit_card);
-  }
-
-  Widget _buildSelectionTile(String title, String value, IconData icon) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: TextStyle(color: Colors.white)),
-        SizedBox(height: 10),
-        InkWell(
-          onTap: () {},
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.white),
-              SizedBox(width: 10),
-              Text(value, style: TextStyle(color: Colors.white)),
-              Spacer(),
-              Icon(Icons.chevron_right, color: Colors.white),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNoteInput() {
-    return _buildTextField('Note', 'Write a note', Icons.notes);
-  }
-
-  Widget _buildTextField(String title, String hint, IconData icon) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: TextStyle(color: Colors.white)),
-        SizedBox(height: 10),
-        Row(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: Colors.white),
-            SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                controller: _noteController,
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: InputBorder.none,
-                ),
-                style: TextStyle(color: Colors.white),
+            _buildDateTimePickers(),
+            const Divider(color: Colors.grey),
+            _buildAmountInput(),
+            _buildCategorySelection(),
+            _buildNoteInput(),
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: _saveExpense,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,),
+                child: const Icon(Icons.save), // Match the image's button text
               ),
             ),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildAttachmentSection() {
-    return _buildSelectionTile('Attachment', 'Add file', Icons.attach_file);
-  }
-
-  Widget _buildBottomNavBar() {
-    return BottomAppBar(
-      color: Colors.black,
-      child: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home, size: 20), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart, size: 20), label: "Analysis"),
-          BottomNavigationBarItem(icon: Icon(Icons.book, size: 20), label: "Budgeting"),
-          BottomNavigationBarItem(icon: Icon(Icons.more, size: 20), label: "More"),
-        ],
       ),
     );
-  }
-
-  String _getMonth(int month) {
-    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1];
   }
 }

@@ -1,7 +1,9 @@
+// home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pennywise/screens/add_expense_screen.dart';
 import 'package:pennywise/screens/all_expenses_screen.dart';
+import 'package:pennywise/widgets/base_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,64 +13,46 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  int _currentPage = 1;
-  final int _itemsPerPage = 5;
-
   double totalIncome = 5000; // Placeholder
   double totalExpenses = 3200; // Placeholder
-
-  final List<Map<String, dynamic>> expenses = [
+  
+  List<Map<String, dynamic>> expenses = [
     {'note': 'Groceries', 'amount': 50.00, 'category': 'Food', 'date': DateTime.now()},
     {'note': 'Transport', 'amount': 15.00, 'category': 'Travel', 'date': DateTime.now()},
     {'note': 'Subscription', 'amount': 10.00, 'category': 'Entertainment', 'date': DateTime.now()},
     {'note': 'Dinner', 'amount': 30.00, 'category': 'Food', 'date': DateTime.now()},
     {'note': 'Electricity Bill', 'amount': 100.00, 'category': 'Utilities', 'date': DateTime.now()},
-    {'note': 'Gym Membership', 'amount': 25.00, 'category': 'Health', 'date': DateTime.now()},
-    {'note': 'Internet Bill', 'amount': 40.00, 'category': 'Utilities', 'date': DateTime.now()},
   ];
+
+  void _addExpense(Map<String, dynamic> newExpense) {
+    setState(() {
+      expenses.insert(0, newExpense);
+      totalExpenses += newExpense['amount'];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text("Pennywise", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.list, color: Colors.white), 
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AllExpensesScreen(expenses: expenses)),
-              );
-            },
-          ),
+    return BaseScreen(
+      body: Column(
+        children: [
+          _buildSummaryCard(),
+          Expanded(child: _buildExpensesList()),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildSummaryCard(),
-            Expanded(child: _buildExpensesList()),
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final newExpense = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => AddExpenseScreen()),
           );
+          if (newExpense != null) {
+            _addExpense(newExpense);
+          }
         },
         backgroundColor: Colors.green,
         child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNavBar(),
+      ), title: 'Home Screen',
     );
   }
 
@@ -119,19 +103,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildExpensesList() {
-    int endIndex = _currentPage * _itemsPerPage;
-    List<Map<String, dynamic>> paginatedExpenses = expenses.sublist(
-      0,
-      endIndex > expenses.length ? expenses.length : endIndex,
-    );
-
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
-            itemCount: paginatedExpenses.length,
+            itemCount: expenses.length > 5 ? 5 : expenses.length,
             itemBuilder: (context, index) {
-              final expense = paginatedExpenses[index];
+              final expense = expenses[index];
               return ListTile(
                 title: Text(expense['note'], style: const TextStyle(color: Colors.white)),
                 subtitle: Text(
@@ -146,45 +124,22 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
-        if (endIndex < expenses.length)
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _currentPage++;
-              });
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text("Load More", style: TextStyle(color: Colors.green)),
-                Icon(Icons.expand_more, color: Colors.green)
-              ],
-            ),
+        TextButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AllExpensesScreen(expenses: expenses)),
+            );
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Text("View All Expenses", style: TextStyle(color: Colors.green)),
+              Icon(Icons.arrow_forward, color: Colors.green)
+            ],
           ),
+        ),
       ],
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 6.0,
-      color: Colors.black,
-      child: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home, size: 20), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart, size: 20), label: "Stats"),
-          BottomNavigationBarItem(icon: Icon(Icons.book, size: 20), label: "Budgeting"),
-          BottomNavigationBarItem(icon: Icon(Icons.more, size: 20), label: "More"),
-        ],
-      ),
     );
   }
 }
