@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pennywise/screens/add_expense_screen.dart';
+import 'package:pennywise/screens/all_expenses_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,9 +12,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  int _currentPage = 1;
+  final int _itemsPerPage = 5;
 
   double totalIncome = 5000; // Placeholder
   double totalExpenses = 3200; // Placeholder
+
+  final List<Map<String, dynamic>> expenses = [
+    {'note': 'Groceries', 'amount': 50.00, 'category': 'Food', 'date': DateTime.now()},
+    {'note': 'Transport', 'amount': 15.00, 'category': 'Travel', 'date': DateTime.now()},
+    {'note': 'Subscription', 'amount': 10.00, 'category': 'Entertainment', 'date': DateTime.now()},
+    {'note': 'Dinner', 'amount': 30.00, 'category': 'Food', 'date': DateTime.now()},
+    {'note': 'Electricity Bill', 'amount': 100.00, 'category': 'Utilities', 'date': DateTime.now()},
+    {'note': 'Gym Membership', 'amount': 25.00, 'category': 'Health', 'date': DateTime.now()},
+    {'note': 'Internet Bill', 'amount': 40.00, 'category': 'Utilities', 'date': DateTime.now()},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +37,17 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
         backgroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.list, color: Colors.white), 
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AllExpensesScreen(expenses: expenses)),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -48,7 +72,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Income & Expenses Summary
   Widget _buildSummaryCard() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -81,7 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Income & Expense Bar
   Widget _buildIncomeExpenseCard(String title, double amount, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,34 +118,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Expense List Placeholder
   Widget _buildExpensesList() {
-    return ListView.builder(
-      itemCount: 5, // Placeholder count
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[850],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              title: const Text("Expense Title", style: TextStyle(color: Colors.white)),
-              subtitle: Text(
-                "Category - ${DateFormat('yyyy-MM-dd').format(DateTime.now())}",
-                style: const TextStyle(color: Colors.grey),
-              ),
-              trailing: const Text("\$20.00", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+    int endIndex = _currentPage * _itemsPerPage;
+    List<Map<String, dynamic>> paginatedExpenses = expenses.sublist(
+      0,
+      endIndex > expenses.length ? expenses.length : endIndex,
+    );
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: paginatedExpenses.length,
+            itemBuilder: (context, index) {
+              final expense = paginatedExpenses[index];
+              return ListTile(
+                title: Text(expense['note'], style: const TextStyle(color: Colors.white)),
+                subtitle: Text(
+                  "${expense['category']} - ${DateFormat('yyyy-MM-dd').format(expense['date'])}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                trailing: Text(
+                  "\$${expense['amount'].toStringAsFixed(2)}",
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              );
+            },
+          ),
+        ),
+        if (endIndex < expenses.length)
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _currentPage++;
+              });
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text("Load More", style: TextStyle(color: Colors.green)),
+                Icon(Icons.expand_more, color: Colors.green)
+              ],
             ),
           ),
-        );
-      },
+      ],
     );
   }
 
-  /// Bottom Navigation Bar
   Widget _buildBottomNavBar() {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
@@ -140,6 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home, size: 20), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.pie_chart, size: 20), label: "Stats"),
+          BottomNavigationBarItem(icon: Icon(Icons.book, size: 20), label: "Budgeting"),
+          BottomNavigationBarItem(icon: Icon(Icons.more, size: 20), label: "More"),
         ],
       ),
     );

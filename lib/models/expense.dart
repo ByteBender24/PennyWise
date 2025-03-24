@@ -21,7 +21,7 @@ class Expense extends HiveObject {
 
   Expense({
     required this.id,
-    required this.title,
+    this.title = "Unknown Expense",
     this.amount = 0.0,
     required this.category,
     required this.date,

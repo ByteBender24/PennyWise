@@ -58,11 +58,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               SizedBox(height: 20),
               _buildCategorySelection(),
               SizedBox(height: 20),
-              _buildPaymentModeSelection(),
-              SizedBox(height: 20),
               _buildNoteInput(),
-              SizedBox(height: 20),
-              _buildAttachmentSection(),
+
               SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _saveExpense,
@@ -218,8 +215,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home, size: 20), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.pie_chart, size: 20), label: "Analysis"),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart, size: 20), label: "Budgeting"),
-          BottomNavigationBarItem(icon: Icon(Icons.pie_chart, size: 20), label: "More"),
+          BottomNavigationBarItem(icon: Icon(Icons.book, size: 20), label: "Budgeting"),
+          BottomNavigationBarItem(icon: Icon(Icons.more, size: 20), label: "More"),
         ],
       ),
     );
