@@ -1,34 +1,55 @@
-//all_expenses_screen.dart
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:pennywise/widgets/base_screen.dart';
+import 'package:pennywise/models/expense.dart';
 
+class AllExpensesScreen extends StatefulWidget {
+  const AllExpensesScreen({Key? key}) : super(key: key);
 
-class AllExpensesScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> expenses;
+  @override
+  _AllExpensesScreenState createState() => _AllExpensesScreenState();
+}
 
-  const AllExpensesScreen({Key? key, required this.expenses}) : super(key: key);
+class _AllExpensesScreenState extends State<AllExpensesScreen> {
+  late Box<Expense> expenseBox;
+
+  @override
+  void initState() {
+    super.initState();
+    expenseBox = Hive.box<Expense>('expenses'); // ✅ Load from Hive
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BaseScreen(
-      title: "All Expenses",
-      body: ListView.builder(
-        itemCount: expenses.length,
-        itemBuilder: (context, index) {
-          final expense = expenses[index];
-          return ListTile(
-            title: Text(expense['note'], style: const TextStyle(color: Colors.white)),
-            subtitle: Text(
-              "${expense['category']} - ${DateFormat('yyyy-MM-dd').format(expense['date'])}",
-              style: const TextStyle(color: Colors.grey),
-            ),
-            trailing: Text(
-              "\$${expense['amount'].toStringAsFixed(2)}",
-              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('All Expenses')),
+      body: ValueListenableBuilder(
+        valueListenable: expenseBox.listenable(),
+        builder: (context, Box<Expense> box, _) {
+          if (box.isEmpty) {
+            return const Center(child: Text("No expenses added yet."));
+          }
+
+          return ListView.builder(
+            itemCount: box.length,
+            itemBuilder: (context, index) {
+              final expense = box.getAt(index);
+              return ListTile(
+                title: Text(expense!.title),
+                subtitle: Text(
+    DateFormat('d MMM yyyy').format(expense.date), // ✅ Use directly
+  ),
+                trailing: Text(expense.date.toString()), // ✅ Fix Date Format Later
+              );
+            },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/addExpense');
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

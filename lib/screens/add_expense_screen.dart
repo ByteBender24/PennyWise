@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 
+import '../models/category.dart';
+import '../models/expense.dart';
+
 class AddExpenseScreen extends StatefulWidget {
   @override
   _AddExpenseScreenState createState() => _AddExpenseScreenState();
@@ -22,7 +25,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _loadCategories() async {
-    var box = await Hive.openBox('expenseCategories');
+    if (!Hive.isBoxOpen('expenseCategories')) {
+    await Hive.openBox<Category>('expenseCategories'); // Open if not already open
+  }
+
+    var box = Hive.box<Category>('expenseCategories');
     setState(() {
       _categories = box.values.cast<String>().toList();
       if (_categories.isEmpty) {
@@ -176,44 +183,43 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _saveExpense() async {
-    String amount = _amountController.text.trim();
-    String note = _noteController.text.trim();
+  String amount = _amountController.text.trim();
+  String note = _noteController.text.trim();
 
-    if (_selectedCategory == null || amount.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter all details")),
-      );
-      return;
-    }
-
-    var box = await Hive.openBox('expenses');
-    await box.add({
-      "category": _selectedCategory,
-      "amount": amount,
-      "note": note,
-      "date": _selectedDate.toIso8601String(),
-      "time": _selectedTime.format(context),
-    });
-
-    print("Expense Saved:");
-    print("Category: $_selectedCategory");
-    print("Amount: $amount");
-    print("Note: $note");
-    print("Date: $_selectedDate");
-    print("Time: $_selectedTime");
-
-    _amountController.clear();
-    _noteController.clear();
-    setState(() {
-      _selectedCategory = "Others";
-      _selectedDate = DateTime.now();
-      _selectedTime = TimeOfDay.fromDateTime(DateTime.now());
-    });
-
+  if (_selectedCategory == null || amount.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Expense Saved Successfully!")),
+      const SnackBar(content: Text("Please enter all details")),
     );
+    return;
   }
+
+  if (!Hive.isBoxOpen('expenses')) {
+    await Hive.openBox<Expense>('expenses'); // Open if not already open
+  }
+  
+  var box = Hive.box<Expense>('expenses'); // Access the opened box
+  
+   // ✅ Ensure category is not null by providing a default value
+  String category = _selectedCategory ?? "Uncategorized";
+
+  // ✅ Generate a unique ID (You can use UUID package for better uniqueness)
+  String expenseId = DateTime.now().millisecondsSinceEpoch.toString();
+
+  // ✅ Create an Expense object with all required fields
+  Expense newExpense = Expense(
+    id: expenseId, // Provide required ID
+    title: _noteController.text.isNotEmpty ? _noteController.text : "Unknown Expense",
+    category: category,   // Ensure this is a non-null String
+    amount: double.tryParse(_amountController.text) ?? 0.0, // Ensure it's a valid double
+    date: _selectedDate, // Provide a default date
+  );
+
+  await box.add(newExpense); // ✅ Save as Expense object
+
+  // Refresh expenses list
+  Navigator.pop(context, true); // Pass true to indicate success
+}
+
 
   @override
   Widget build(BuildContext context) {

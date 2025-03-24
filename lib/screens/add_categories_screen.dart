@@ -64,7 +64,6 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
-      title: "Add Category",
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -100,7 +99,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
             child: const Text("Save Category"),
           ),
         ],
-      ),
+      ), title: 'Add Category',
     );
   }
 }

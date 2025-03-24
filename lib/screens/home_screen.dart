@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => AllExpensesScreen(expenses: expenses)),
+              MaterialPageRoute(builder: (context) => AllExpensesScreen()),
             );
           },
           child: Row(
