@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
-import 'package:pennywise/screens/add_expense_screen.dart';
 import 'package:pennywise/screens/all_expenses_screen.dart';
 import 'package:pennywise/widgets/base_screen.dart';
 
@@ -82,26 +81,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
+      title: "Home Screen",
+      currentIndex: 0,
       body: Column(
         children: [
           _buildSummaryCard(),
           Expanded(child: _buildExpensesList()),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final newExpense = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddExpenseScreen()),
-          );
-          if (newExpense != null) {
-            _addExpense(newExpense);
-          }
-        },
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      title: 'Home Screen',
+      )
     );
   }
 

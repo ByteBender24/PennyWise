@@ -64,6 +64,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
+      currentIndex: 3,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
