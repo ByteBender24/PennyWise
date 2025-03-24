@@ -1,9 +1,11 @@
-// home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:pennywise/screens/add_expense_screen.dart';
 import 'package:pennywise/screens/all_expenses_screen.dart';
 import 'package:pennywise/widgets/base_screen.dart';
+
+import '../models/expense.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,22 +15,68 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  double totalIncome = 5000; // Placeholder
-  double totalExpenses = 3200; // Placeholder
-  
-  List<Map<String, dynamic>> expenses = [
-    {'note': 'Groceries', 'amount': 50.00, 'category': 'Food', 'date': DateTime.now()},
-    {'note': 'Transport', 'amount': 15.00, 'category': 'Travel', 'date': DateTime.now()},
-    {'note': 'Subscription', 'amount': 10.00, 'category': 'Entertainment', 'date': DateTime.now()},
-    {'note': 'Dinner', 'amount': 30.00, 'category': 'Food', 'date': DateTime.now()},
-    {'note': 'Electricity Bill', 'amount': 100.00, 'category': 'Utilities', 'date': DateTime.now()},
-  ];
+  late Box expenseBox;
+  double totalIncome = 5000; // Placeholder, can be updated dynamically
+  double totalExpenses = 0.0;
+  List<Map<String, dynamic>> expenses = [];
 
-  void _addExpense(Map<String, dynamic> newExpense) {
-    setState(() {
-      expenses.insert(0, newExpense);
-      totalExpenses += newExpense['amount'];
+  @override
+  void initState() {
+    super.initState();
+    _openBox();
+  }
+
+  // Open Hive Box
+  void _openBox() async {
+    if (!Hive.isBoxOpen('expenses')) {
+      expenseBox = await Hive.openBox<Expense>('expenses');
+    } else {
+      expenseBox = Hive.box<Expense>('expenses');
+    }
+    _calculateTotals();
+    _loadExpenses();
+  }
+
+  void _calculateTotals() {
+    totalExpenses =
+        expenseBox.values.fold(0, (sum, expense) => sum + expense.amount);
+    setState(() {});
+  }
+
+  void _loadExpenses() {
+  final List<Map<String, dynamic>> loadedExpenses = [];
+  double calculatedTotalExpenses = 0.0;
+
+  for (var expense in expenseBox.values) {
+    if (expense is Expense) {
+      loadedExpenses.add({
+        'title': expense.title,
+        'amount': expense.amount,
+        'category': expense.category,
+        'date': expense.date,
+      });
+      calculatedTotalExpenses += expense.amount;
+    }
+  }
+
+  setState(() {
+    expenses = loadedExpenses;
+    totalExpenses = calculatedTotalExpenses;
+  });
+}
+
+  // Add new expense to Hive
+  void _addExpense(Map<String, dynamic> newExpense) async {
+    await expenseBox.add({
+      'title': newExpense['title'],
+      'amount': newExpense['amount'],
+      'category': newExpense['category'],
+      'date': newExpense['date'].toIso8601String(),
     });
+
+    setState(() {
+    _loadExpenses(); // Ensures UI updates after adding expense
+  });// Reload expenses after adding
   }
 
   @override
@@ -52,7 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         backgroundColor: Colors.green,
         child: const Icon(Icons.add, color: Colors.white),
-      ), title: 'Home Screen',
+      ),
+      title: 'Home Screen',
     );
   }
 
@@ -68,11 +117,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Total Balance", style: TextStyle(color: Colors.white, fontSize: 16)),
+            const Text("Total Balance",
+                style: TextStyle(color: Colors.white, fontSize: 16)),
             const SizedBox(height: 8),
             Text(
               "\$${(totalIncome - totalExpenses).toStringAsFixed(2)}",
-              style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
@@ -96,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 5),
         Text(
           "\$${amount.toStringAsFixed(2)}",
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -111,34 +165,39 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final expense = expenses[index];
               return ListTile(
-                title: Text(expense['note'], style: const TextStyle(color: Colors.white)),
+                title: Text(expense['title'],
+                    style: const TextStyle(color: Colors.white)),
                 subtitle: Text(
                   "${expense['category']} - ${DateFormat('yyyy-MM-dd').format(expense['date'])}",
                   style: const TextStyle(color: Colors.grey),
                 ),
                 trailing: Text(
                   "\$${expense['amount'].toStringAsFixed(2)}",
-                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: Colors.red, fontWeight: FontWeight.bold),
                 ),
               );
             },
           ),
         ),
         TextButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AllExpensesScreen()),
-            );
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Text("View All Expenses", style: TextStyle(color: Colors.green)),
-              Icon(Icons.arrow_forward, color: Colors.green)
-            ],
-          ),
-        ),
+  onPressed: () async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AllExpensesScreen()),
+    );
+    setState(() {
+      _loadExpenses(); // Ensure HomeScreen reloads data after returning
+    });
+  },
+  child: const Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text("View All Expenses", style: TextStyle(color: Colors.green)),
+      Icon(Icons.arrow_forward, color: Colors.green)
+    ],
+  ),
+),
       ],
     );
   }
