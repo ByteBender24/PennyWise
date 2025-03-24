@@ -107,7 +107,7 @@ class SettingsScreen extends StatelessWidget {
           title: 'Scheduled Txns',
           color: Colors.pink[800]!,
           onTap: () {
-            Navigator.pushNamed(context, '/category_add');
+            Navigator.pushNamed(context, '/all_accounts');
           },
         ),
         _buildGridItem(

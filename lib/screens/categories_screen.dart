@@ -5,7 +5,6 @@ import 'package:uuid/uuid.dart';
 import '../models/category.dart';
 import '../services/category_service.dart';
 
-
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
 
@@ -30,7 +29,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void _loadCategories() {
     setState(() {
       _categories = CategoryService.getCategories();
+      if (_categories.isEmpty) {
+        _categories = [
+          Category(id: const Uuid().v4(), name: "Others", iconCode: Icons.more_horiz.codePoint, colorValue: 0xFF03A9F4),
+          Category(id: const Uuid().v4(), name: "Food", iconCode: Icons.restaurant.codePoint, colorValue: 0xFF4CAF50),
+          Category(id: const Uuid().v4(), name: "Shopping", iconCode: Icons.shopping_cart.codePoint, colorValue: 0xFF2196F3),
+          Category(id: const Uuid().v4(), name: "Transport", iconCode: Icons.directions_car.codePoint, colorValue: 0xFF47361C),
+        ];
+      }
     });
+    print("Loaded Categories: $_categories");
   }
 
   void _addCategory() {
@@ -124,7 +132,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     itemBuilder: (context, index) {
                       final category = _categories[index];
                       return ListTile(
-                        leading: Icon(IconData(category.iconCode, fontFamily: 'MaterialIcons')),
+                        leading: Icon(IconData(category.iconCode,
+                            fontFamily: 'MaterialIcons'), color: Color(category.colorValue)),
                         title: Text(category.name),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
@@ -141,17 +150,29 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   // ✅ Icon Picker Dialog
   Widget _buildIconPicker() {
-    List<IconData> icons = [
+    List<IconData> icons = [ 
+      Icons.more_horiz,
+      Icons.restaurant,
       Icons.shopping_cart,
-      Icons.food_bank,
+      Icons.fastfood,
       Icons.directions_car,
       Icons.home,
-      Icons.sports_soccer,
       Icons.movie,
+      Icons.sports_esports,
       Icons.health_and_safety,
+      Icons.flight,
       Icons.school,
-      Icons.work,
-      Icons.category
+      Icons.gamepad,
+      Icons.favorite,
+      Icons.attach_money,
+      Icons.bathtub,
+      Icons.school,
+      Icons.receipt,
+      Icons.show_chart,
+      Icons.home,
+      Icons.monetization_on,
+      Icons.security,
+      Icons.card_giftcard,
     ];
 
     return AlertDialog(

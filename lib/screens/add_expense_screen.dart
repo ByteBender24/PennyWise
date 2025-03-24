@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/category.dart';
 import '../models/expense.dart';
@@ -25,18 +26,39 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _loadCategories() async {
-    if (!Hive.isBoxOpen('expenseCategories')) {
-    await Hive.openBox<Category>('expenseCategories'); // Open if not already open
+  if (!Hive.isBoxOpen('categories')) {
+    await Hive.openBox<Category>('categories'); // Open if not already open
   }
 
-    var box = Hive.box<Category>('expenseCategories');
-    setState(() {
-      _categories = box.values.cast<String>().toList();
-      if (_categories.isEmpty) {
-        _categories = ["Others", "Food", "Transport", "Shopping"];
-      }
-    });
+  var box = Hive.box<Category>('categories');
+
+  setState(() {
+    _categories = box.values.map((category) => category.name).toList();
+    
+    // If no categories exist, add default ones
+    if (_categories.isEmpty) {
+      _initializeDefaultCategories(box);
+    }
+  });
+}
+
+// Function to initialize default categories if the box is empty
+void _initializeDefaultCategories(Box<Category> box) {
+  List<Category> defaultCategories = [
+    Category(id: const Uuid().v4(), name: "Others", iconCode: Icons.more_horiz.codePoint, colorValue: 0xFF03A9F4),
+    Category(id: const Uuid().v4(), name: "Food", iconCode: Icons.restaurant.codePoint, colorValue: 0xFF4CAF50),
+    Category(id: const Uuid().v4(), name: "Shopping", iconCode: Icons.shopping_cart.codePoint, colorValue: 0xFF2196F3),
+    Category(id: const Uuid().v4(), name: "Transport", iconCode: Icons.directions_car.codePoint, colorValue: 0xFF47361C),
+  ];
+
+  for (var category in defaultCategories) {
+    box.add(category);
   }
+
+  setState(() {
+    _categories = defaultCategories.map((c) => c.name).toList();
+  });
+}
 
   void _showCategorySelection() {
     showModalBottomSheet(

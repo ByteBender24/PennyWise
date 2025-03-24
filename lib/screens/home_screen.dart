@@ -146,6 +146,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildExpensesList() {
     return Column(
       children: [
+        TextButton(
+  onPressed: () async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AllExpensesScreen()),
+    );
+    setState(() {
+      _loadExpenses(); // Ensure HomeScreen reloads data after returning
+    });
+  },
+  child: const Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text("View All Expenses", style: TextStyle(color: Colors.green)),
+      Icon(Icons.arrow_forward, color: Colors.green)
+    ],
+  ),
+),
         Expanded(
           child: ListView.builder(
             itemCount: expenses.length > 5 ? 5 : expenses.length,
@@ -167,24 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
-        TextButton(
-  onPressed: () async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AllExpensesScreen()),
-    );
-    setState(() {
-      _loadExpenses(); // Ensure HomeScreen reloads data after returning
-    });
-  },
-  child: const Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Text("View All Expenses", style: TextStyle(color: Colors.green)),
-      Icon(Icons.arrow_forward, color: Colors.green)
-    ],
-  ),
-),
+        
       ],
     );
   }

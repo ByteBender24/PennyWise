@@ -30,14 +30,17 @@ class _BaseScreenState extends State<BaseScreen> {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => const HomeScreen()));
         break;
+
       case 1:
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => AnalyticsScreen()));
+            context, MaterialPageRoute(builder: (context) => AnalysisScreen()));
         break;
+
       case 2:
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => BudgetingScreen()));
         break;
+
       case 3:
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => SettingsScreen()));
@@ -66,7 +69,7 @@ class _BaseScreenState extends State<BaseScreen> {
       bottomNavigationBar: BottomAppBar(
         color: Colors.black,
         shape: const CircularNotchedRectangle(),
-        notchMargin: 6.0,
+        notchMargin: 8.0,
         child: BottomNavigationBar(
           backgroundColor: Colors.transparent, // Make it transparent
           selectedItemColor: Colors.green,
@@ -74,25 +77,32 @@ class _BaseScreenState extends State<BaseScreen> {
           currentIndex: widget.currentIndex, // Dynamic index
           onTap: (index) => _navigateToScreen(context, index),
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home, size: 20), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.pie_chart, size: 20), label: "Stats"),
-            BottomNavigationBarItem(icon: Icon(Icons.book, size: 20), label: "Budgeting"),
-            BottomNavigationBarItem(icon: Icon(Icons.more, size: 20), label: "More"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.home, size: 20), label: "Home"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.pie_chart, size: 20), label: "Stats"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.book, size: 20), label: "Budgeting"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.more, size: 20), label: "More"),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final newExpense = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddExpenseScreen()),
-          );
-          if (newExpense != null) {
-            _addExpense(newExpense);
-          }
-        },
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 20.0), // Adjust this value to move the button upwards
+        child: FloatingActionButton(
+          onPressed: () async {
+            final newExpense = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddExpenseScreen()),
+            );
+            if (newExpense != null) {
+              _addExpense(newExpense);
+            }
+          },
+          backgroundColor: Colors.green,
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
