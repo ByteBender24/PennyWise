@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pennywise/screens/add_expense_screen.dart';
+import 'package:pennywise/screens/debug_screen.dart';
 import 'package:pennywise/screens/more_screen.dart';
+import 'models/budget.dart';
 import 'models/expense.dart';
 import 'models/category.dart';
 import 'screens/accounts_screen.dart';
@@ -22,12 +24,20 @@ void main() async {
   var dir = await getApplicationDocumentsDirectory();
   print("Hive DB location: ${dir.path}");
 
-  // ✅Open boxes before modifying them
-  Hive.registerAdapter(ExpenseAdapter());
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(ExpenseAdapter());
+  }
   await Hive.openBox<Expense>('expenses');
-  Hive.registerAdapter(CategoryAdapter());
+
+  if (!Hive.isAdapterRegistered(2)) {
+    Hive.registerAdapter(CategoryAdapter());
+  }
   await Hive.openBox<Category>('categories');
 
+  if (!Hive.isAdapterRegistered(3)) {
+    Hive.registerAdapter(BudgetAdapter()); // Register Budget Model
+  }
+  await Hive.openBox<Budget>('budgets');
   // ❌ REMOVE deleteFromDisk() or move it correctly
   // ❌ REMOVE clear() if you don't want to reset data every time
   // Optional: If you really need to clear for debugging, do it safely:
@@ -56,11 +66,12 @@ class MyApp extends StatelessWidget {
       routes: {
         '/addExpense': (context) => AddExpenseScreen(),
         '/analytics': (context) => AnalysisScreen(),
-        '/budgeting': (context) => BudgetingScreen(),
+        '/budgeting': (context) => BudgetScreen(),
         '/more': (context) => SettingsScreen(),
         '/all_categories': (context) => const CategoriesScreen(),
         '/all_expenses': (context) => const AllExpensesScreen(),
-        '/all_accounts': (context) =>  AccountsScreen(),
+        '/all_accounts': (context) => AccountsScreen(),
+        '/debug' : (context) => DebugScreen()
       },
       home: const HomeScreen(),
     );

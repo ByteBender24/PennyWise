@@ -19,6 +19,11 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
     expenseBox = Hive.box<Expense>('expenses'); // ✅ Load from Hive
   }
 
+  void _deleteExpense(int index) {
+    expenseBox.deleteAt(index); // ✅ Delete from Hive
+    setState(() {}); // ✅ Refresh UI
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,10 +41,17 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
               final expense = box.getAt(index);
               return ListTile(
                 title: Text(expense!.title),
-                subtitle: Text(
-    DateFormat('d MMM yyyy').format(expense.date), // ✅ Use directly
-  ),
-                trailing: Text(expense.date.toString()), // ✅ Fix Date Format Later
+                subtitle: Text(DateFormat('d MMM yyyy').format(expense.date)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("₹${expense.amount.toStringAsFixed(2)}"),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _deleteExpense(index), // ✅ Delete on tap
+                    ),
+                  ],
+                ),
               );
             },
           );

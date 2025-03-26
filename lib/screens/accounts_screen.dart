@@ -1,5 +1,9 @@
 
 import 'package:flutter/material.dart';
+import 'package:pennywise/screens/analytics_screen.dart';
+import 'package:pennywise/screens/budgeting_screen.dart';
+import 'package:pennywise/screens/home_screen.dart';
+import 'package:pennywise/screens/more_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,20 +13,27 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: AccountsScreen(),
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.black,
-          elevation: 0,
-        ),
-      ),
-    );
+  initialRoute: '/all_accounts',
+  routes: {
+    '/analytics': (context) => AnalysisScreen(),
+    '/budgeting': (context) => BudgetScreen(),
+    '/more': (context) => SettingsScreen(),
+    '/home': (context) => const HomeScreen()
+  },
+  debugShowCheckedModeBanner: false,
+  theme: ThemeData.dark().copyWith(
+    scaffoldBackgroundColor: Colors.black,
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.black,
+      elevation: 0,
+    ),
+  ),
+);
   }
 }
 
 class AccountsScreen extends StatelessWidget {
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,7 +59,7 @@ class AccountsScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: _buildBottomNavigationBar(context),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showAmountInputDialog(context);
@@ -131,7 +142,7 @@ class AccountsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar(BuildContext context) {
     return BottomAppBar(
       color: Colors.grey[900],
       shape: CircularNotchedRectangle(),
@@ -141,24 +152,29 @@ class AccountsScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
           IconButton(
-            icon: Icon(Icons.home, color: Colors.grey),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: Icon(Icons.show_chart, color: Colors.grey),
-            onPressed: () {},
-          ),
-          SizedBox(width: 48), // Placeholder for FAB
-          IconButton(
-            icon: Icon(Icons.account_balance, color: Colors.white),
-            onPressed: () {
-              // Already on the Accounts screen
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.more_horiz, color: Colors.grey),
-            onPressed: () {},
-          ),
+  icon: Icon(Icons.home, color: Colors.grey),
+  onPressed: () {
+    Navigator.pushNamed(context, '/home');
+  },
+),
+IconButton(
+  icon: Icon(Icons.show_chart, color: Colors.grey),
+  onPressed: () {
+    Navigator.pushNamed(context, '/analytics');
+  },
+),
+IconButton(
+  icon: Icon(Icons.account_balance, color: Colors.white),
+  onPressed: () {
+    Navigator.pushNamed(context, '/all_accounts');
+  },
+),
+IconButton(
+  icon: Icon(Icons.more_horiz, color: Colors.grey),
+  onPressed: () {
+    Navigator.pushNamed(context, '/more');
+  },
+),
         ],
       ),
     );

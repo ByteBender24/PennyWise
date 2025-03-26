@@ -29,4 +29,19 @@ class Category {
 
   // ✅ Convert stored colorValue back to Color
   Color get color => Color(colorValue);
+
+   // Updated toMap method
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'iconCode': iconCode,
+      'colorValue': colorValue,
+    };
+  }
+  
+  @override
+  String toString() {
+    return toMap().toString();
+  }
 }

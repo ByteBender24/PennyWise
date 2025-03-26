@@ -120,10 +120,10 @@ class SettingsScreen extends StatelessWidget {
         ),
         _buildGridItem(
           icon: Icons.tag,
-          title: 'Tags',
+          title: 'Tags', //Debug screen for now
           color: const Color.fromARGB(255, 109, 99, 99),
           onTap: () {
-            print('Tags tapped!');
+            Navigator.pushNamed(context, '/debug');
           },
         ),
       ],

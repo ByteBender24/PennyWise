@@ -48,4 +48,9 @@ class Expense extends HiveObject {
       date: DateTime.parse(map['date']), // Convert back to DateTime
     );
   }
+
+  @override
+  String toString() {
+    return toMap().toString();
+  }
 }

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:pennywise/screens/all_expenses_screen.dart';
+import 'package:pennywise/services/budget_service.dart';
 import 'package:pennywise/widgets/base_screen.dart';
+import 'package:uuid/uuid.dart';
 
+import '../models/budget.dart';
 import '../models/expense.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -66,6 +69,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Add new expense to Hive
   void _addExpense(Map<String, dynamic> newExpense) async {
+
+    String expenseId = Uuid().v4(); // Generate a unique ID
+    
     await expenseBox.add({
       'title': newExpense['title'],
       'amount': newExpense['amount'],
@@ -73,11 +79,36 @@ class _HomeScreenState extends State<HomeScreen> {
       'date': newExpense['date'].toIso8601String(),
     });
 
+    Expense expense = Expense(
+    id: expenseId,
+    title: newExpense['title'],
+    amount: newExpense['amount'],
+    category: newExpense['category'],
+    date: newExpense['date'],
+  );
+
+    _updateBudget(expense);
+
     setState(() {
     _loadExpenses(); // Ensures UI updates after adding expense
   });// Reload expenses after adding
   }
 
+  void _updateBudget(Expense expense) async {
+
+  Budget? budget = await BudgetService.getBudget(expense.category);
+
+  if (budget == null) {
+    // If no budget exists, create a default budget
+    budget = Budget(category: expense.category, limit: 0, spent: 0);
+    await BudgetService.addBudget(budget);
+  }
+
+  // Update spent amount
+  budget.spent += expense.amount;
+  await BudgetService.updateBudget(budget);
+}
+  
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
