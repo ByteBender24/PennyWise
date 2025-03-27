@@ -33,7 +33,10 @@ class BackupService {
         batch.set(ref, expense.toMap());
       }
 
+      await batch.commit();
+      batch = _firestore.batch();
       for (var category in categoryBox.values) {
+        print("Category ID: ${category.id}, Data: ${category.toMap()}");
         DocumentReference ref = _firestore
             .collection('users')
             .doc(userId)
@@ -41,8 +44,11 @@ class BackupService {
             .doc(category.id);
         batch.set(ref, category.toMap());
       }
+      await batch.commit();
+      batch = _firestore.batch();
 
       for (var budget in budgetBox.values) {
+        print("Budget ID: ${budget.id}, Data: ${budget.toMap()}");
         DocumentReference ref = _firestore
             .collection('users')
             .doc(userId)
@@ -50,8 +56,10 @@ class BackupService {
             .doc(budget.id);
         batch.set(ref, budget.toMap());
       }
-
       await batch.commit();
+      
+      
+      
       print("Backup completed successfully!");
     } catch (e) {
       print("Error during backup: $e");

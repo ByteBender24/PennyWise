@@ -156,6 +156,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.pushNamed(context, '/debug');
             },
           ),
+          _buildGridItem(
+            icon: Icons.chat,
+            title: 'ChatBot',
+            color: const Color.fromARGB(255, 234, 220, 220),
+            onTap: () {
+              Navigator.pushNamed(context, '/chatbot');
+            },
+          ),
         ],
       ),
     );

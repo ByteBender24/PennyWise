@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pennywise/screens/add_expense_screen.dart';
+import 'package:pennywise/screens/chat_screen.dart';
 import 'package:pennywise/screens/debug_screen.dart';
 import 'package:pennywise/screens/more_screen.dart';
 import 'models/budget.dart';
@@ -48,6 +49,8 @@ void main() async {
   // var categoryBox = Hive.box<Category>('categories');
   await CategoryService.initializeCategories();
   await ExpenseService.initializeExpenses();
+
+
   // expenseBox.clear(); // Debugging only
   // categoryBox.clear(); // Debugging only
 
@@ -90,7 +93,10 @@ class MyApp extends StatelessWidget {
         '/all_categories': (context) => const CategoriesScreen(),
         '/all_expenses': (context) => const AllExpensesScreen(),
         '/all_accounts': (context) => AccountsScreen(),
-        '/debug' : (context) => DebugScreen()
+        '/debug' : (context) => DebugScreen(),
+        '/chatbot' : (context) => ChatbotScreen(),
+
+        
       },
       home: const HomeScreen(),
     );

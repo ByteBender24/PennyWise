@@ -3,8 +3,11 @@ import '../models/budget.dart';
 
 class BudgetService {
   static final Box<Budget> _budgetBox = Hive.box<Budget>('budgets');
-
+    
+  
+  
   static Future<Budget?> getBudget(String category) async {
+    print ("🖐Budgets: ${_budgetBox.values.toList()}");
     return _budgetBox.values.firstWhere(
       (budget) => budget.category == category,
       orElse: () => Budget(category: category, limit: 0, spent: 0),
