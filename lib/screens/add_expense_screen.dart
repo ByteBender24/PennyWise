@@ -87,7 +87,7 @@ void _initializeDefaultCategories(Box<Category> box) {
   }
 
   Widget _buildCategorySelection() {
-    return InkWell(
+    return GestureDetector (
       onTap: _showCategorySelection,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -154,14 +154,14 @@ void _initializeDefaultCategories(Box<Category> box) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        InkWell(
+        GestureDetector (
           onTap: _selectDate,
           child: Text(
             DateFormat('d MMM yyyy').format(_selectedDate), // Include year
             style: TextStyle(color: Colors.white),
           ),
         ),
-        InkWell(
+        GestureDetector (
           onTap: _selectTime,
           child: Text(
             _selectedTime.format(context),

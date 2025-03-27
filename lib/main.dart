@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pennywise/screens/add_expense_screen.dart';
@@ -15,6 +17,7 @@ import 'screens/categories_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/category_service.dart';
 import 'services/expense_service.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +50,22 @@ void main() async {
   await ExpenseService.initializeExpenses();
   // expenseBox.clear(); // Debugging only
   // categoryBox.clear(); // Debugging only
+
+
+
+  //FIREBASE INITIALIZATION
+  await dotenv.load();
+
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print("Error loading .env file: $e");
+  } 
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const MyApp());
 }

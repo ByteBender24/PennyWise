@@ -8,3 +8,11 @@ pubspec.lock
 android/.gradle/
 android/app/key.jks
 ios/Pods/
+
+# Firebase
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+.env
+firebase_options.dart
+firebase.json

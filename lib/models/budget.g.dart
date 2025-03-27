@@ -17,21 +17,24 @@ class BudgetAdapter extends TypeAdapter<Budget> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Budget(
-      category: fields[0] as String,
-      limit: fields[1] as double,
-      spent: fields[2] as double,
+      category: fields[1] as String,
+      limit: fields[2] as double,
+      spent: fields[3] as double,
+      id: fields[0].toString(), // Convert ID to String safely
     );
   }
 
   @override
   void write(BinaryWriter writer, Budget obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.category)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.limit)
+      ..write(obj.category)
       ..writeByte(2)
+      ..write(obj.limit)
+      ..writeByte(3)
       ..write(obj.spent);
   }
 
@@ -45,3 +48,4 @@ class BudgetAdapter extends TypeAdapter<Budget> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
+
