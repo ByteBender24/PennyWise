@@ -7,6 +7,7 @@ import 'package:pennywise/screens/add_expense_screen.dart';
 import 'package:pennywise/screens/chat_screen.dart';
 import 'package:pennywise/screens/debug_screen.dart';
 import 'package:pennywise/screens/more_screen.dart';
+import 'package:pennywise/screens/receipt_screen.dart';
 import 'models/budget.dart';
 import 'models/expense.dart';
 import 'models/category.dart';
@@ -19,6 +20,8 @@ import 'screens/home_screen.dart';
 import 'services/category_service.dart';
 import 'services/expense_service.dart';
 import 'firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +73,13 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  FirebaseFirestore.instance.settings = Settings(
+    persistenceEnabled: false,
+    sslEnabled: true,
+    host: "firestore.googleapis.com",
+  );
+  
+
   runApp(const MyApp());
 }
 
@@ -95,6 +105,7 @@ class MyApp extends StatelessWidget {
         '/all_accounts': (context) => AccountsScreen(),
         '/debug' : (context) => DebugScreen(),
         '/chatbot' : (context) => ChatbotScreen(),
+        '/receipt': (context) => ReceiptScreen(), 
 
         
       },

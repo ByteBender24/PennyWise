@@ -3,6 +3,7 @@ import 'package:pie_chart/pie_chart.dart';
 import 'package:hive/hive.dart';
 import '../models/expense.dart';
 import '../widgets/base_screen.dart';
+import '../services/receipt_service.dart';
 
 class AnalysisScreen extends StatefulWidget {
   @override
@@ -10,6 +11,7 @@ class AnalysisScreen extends StatefulWidget {
 }
 
 class _AnalysisScreenState extends State<AnalysisScreen> {
+  final ReceiptService _receiptService = ReceiptService();
   String selectedFilter = 'Weekly'; // Default filter
   DateTime startDate = DateTime.now().subtract(Duration(days: 6));
   DateTime endDate = DateTime.now();
@@ -21,6 +23,45 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   void initState() {
     super.initState();
     _fetchExpenses();
+  }
+
+  /// Fetch bills from Firestore using ReceiptService
+  void fetchBills() async {
+    try {
+      List<Map<String, dynamic>> bills = await _receiptService.getBills();
+
+      print("Fetched bills: $bills"); // Debugging line
+
+      Map<String, double> categoryMap = {};
+      double spent = 0.0;
+      int count = 0;
+
+      for (var bill in bills) {
+        double totalAmount = bill["totalAmount"] ?? 0.0;
+        List<dynamic> categories = bill["categories"] ?? [];
+
+        count++;
+        spent += totalAmount;
+
+        for (var category in categories) {
+          print("🖐🖐 Category: $category");
+          String categoryName = category["category"];
+          double amount = (category["total"] ?? 0.0).toDouble();
+          categoryMap[categoryName] = (categoryMap[categoryName] ?? 0) + amount;
+        }
+      }
+
+      setState(() {
+        totalTransactions = count;
+        totalSpent = spent;
+        categoryData = categoryMap;
+      });
+
+      print(
+          "Total Transactions: $totalTransactions, Total Spent: ₹$totalSpent, Data: $categoryData"); // Debugging line
+    } catch (e) {
+      print("❌ Error fetching bills: $e");
+    }
   }
 
   /// Fetch expenses from Hive and filter by selected date range
@@ -51,7 +92,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       categoryData = categoryMap;
     });
 
-    print("Total Transactions: $totalTransactions, Total Spent: ₹$totalSpent, Data: $categoryData"); // Debugging line
+    print(
+        "Total Transactions: $totalTransactions, Total Spent: ₹$totalSpent, Data: $categoryData"); // Debugging line
   }
 
   /// Update the filter (Daily, Weekly, Monthly) and fetch data accordingly
@@ -61,14 +103,18 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       if (filter == 'Daily') {
         startDate = DateTime.now();
         endDate = DateTime.now();
+        _fetchExpenses();
       } else if (filter == 'Weekly') {
         startDate = DateTime.now().subtract(Duration(days: 6));
         endDate = DateTime.now();
+        _fetchExpenses();
       } else if (filter == 'Monthly') {
         startDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
         endDate = DateTime.now();
+        _fetchExpenses();
+      } else {
+        fetchBills();
       }
-      _fetchExpenses();
     });
   }
 
@@ -94,6 +140,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         _filterButton('Daily'),
         _filterButton('Weekly'),
         _filterButton('Monthly'),
+        _filterButton('Bills')
       ],
     );
   }
@@ -101,7 +148,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget _filterButton(String label) {
     return TextButton(
       onPressed: () => _updateFilter(label),
-      child: Text(label, style: TextStyle(color: selectedFilter == label ? Colors.blue : Colors.white)),
+      child: Text(label,
+          style: TextStyle(
+              color: selectedFilter == label ? Colors.blue : Colors.white)),
     );
   }
 
@@ -111,7 +160,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         : PieChart(
             dataMap: categoryData,
             chartType: ChartType.ring,
-            chartValuesOptions: ChartValuesOptions(showChartValuesInPercentage: true),
+            chartValuesOptions:
+                ChartValuesOptions(showChartValuesInPercentage: true),
           );
   }
 

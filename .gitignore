@@ -16,3 +16,4 @@ ios/Runner/GoogleService-Info.plist
 .env
 firebase_options.dart
 firebase.json
+APIs.json

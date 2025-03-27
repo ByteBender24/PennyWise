@@ -134,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildGridItem(
             icon: Icons.calendar_today,
-            title: 'Scheduled Txns',
+            title: 'Accounts',
             color: Colors.pink[800]!,
             onTap: () {
               Navigator.pushNamed(context, '/all_accounts');
@@ -158,10 +158,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildGridItem(
             icon: Icons.chat,
-            title: 'ChatBot',
-            color: const Color.fromARGB(255, 234, 220, 220),
+            title: 'Chat Assistant',
+            color: const Color.fromARGB(255, 224, 208, 208),
             onTap: () {
               Navigator.pushNamed(context, '/chatbot');
+            },
+          ),
+          _buildGridItem(
+            icon: Icons.camera_alt,
+            title: 'Scan Receipt',
+            color: const Color.fromARGB(255, 245, 57, 57),
+            onTap: () {
+              Navigator.pushNamed(context, '/receipt');
             },
           ),
         ],
