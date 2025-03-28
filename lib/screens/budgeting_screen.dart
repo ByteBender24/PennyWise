@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pennywise/services/budget_service.dart';
-// ignore: duplicate_import
+import 'package:pennywise/screens/analytics_screen.dart';
+import 'package:pennywise/screens/home_screen.dart';
+import 'package:pennywise/screens/more_screen.dart';
 
 
 class BudgetingScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class _BudgetingScreenState extends State<BudgetingScreen> {
   String monthYear = "";
   Map<String, dynamic>? monthlyBudget;
   List<Map<String, dynamic>> categories = [];
+  int _currentIndex = 2; // Initially set to Budgeting tab
 
   @override
   void initState() {
@@ -212,12 +215,33 @@ class _BudgetingScreenState extends State<BudgetingScreen> {
     );
   }
 
+  void _onTabTapped(int index) {
+    if (index == _currentIndex) return; // Avoid unnecessary navigation
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        break;
+      case 1:
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => AnalysisScreen()));
+        break;
+      case 3:
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => SettingsScreen()));
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar:
-          AppBar(title: Text("Budget Analysis"), backgroundColor: Colors.black),
+      appBar: AppBar(
+        title: Text("Budget Analysis"),
+        backgroundColor: Colors.black,
+        centerTitle: true,
+      ),
       body: monthlyBudget == null
           ? Center(
               child: Text("No budget set. Tap + to add a budget.",
@@ -286,13 +310,37 @@ class _BudgetingScreenState extends State<BudgetingScreen> {
                 ],
               ),
             ),
-      
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
         child: Icon(Icons.add),
         onPressed: () {
           _showBudgetOptionsDialog();
         },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // Bottom Navigation Bar
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.black,
+        shape: CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        child: BottomNavigationBar(
+          backgroundColor: Colors.transparent,
+          selectedItemColor: Colors.green,
+          unselectedItemColor: Colors.grey,
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          items: const [
+            BottomNavigationBarItem(
+                icon: Icon(Icons.home, size: 20), label: "Home"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.pie_chart, size: 20), label: "Stats"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.book, size: 20), label: "Budgeting"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.more, size: 20), label: "More"),
+          ],
+        ),
       ),
     );
   }
