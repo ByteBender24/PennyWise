@@ -38,7 +38,7 @@ class _BaseScreenState extends State<BaseScreen> {
 
       case 2:
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => BudgetScreen()));
+            context, MaterialPageRoute(builder: (context) => BudgetingScreen()));
         break;
 
       case 3:

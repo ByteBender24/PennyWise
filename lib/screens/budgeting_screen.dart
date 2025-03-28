@@ -1,119 +1,298 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import '../models/budget.dart';
-import '../models/category.dart';
-import '../widgets/base_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pennywise/services/budget_service.dart';
+// ignore: duplicate_import
 
-class BudgetScreen extends StatefulWidget {
+
+class BudgetingScreen extends StatefulWidget {
   @override
-  _BudgetScreenState createState() => _BudgetScreenState();
+  _BudgetingScreenState createState() => _BudgetingScreenState();
 }
 
-class _BudgetScreenState extends State<BudgetScreen> {
-  late Box<Budget> budgetBox;
+class _BudgetingScreenState extends State<BudgetingScreen> {
+  final BudgetService _budgetService = BudgetService();
+
+  String monthYear = "";
+  Map<String, dynamic>? monthlyBudget;
+  List<Map<String, dynamic>> categories = [];
 
   @override
   void initState() {
     super.initState();
-    budgetBox = Hive.box<Budget>('budgets');
+    monthYear = _getCurrentMonthYear();
+    _loadBudgets();
   }
 
-  void _addBudgetDialog() {
-    String? selectedCategory;
-    double limit = 0.0;
-
+  void _showBudgetOptionsDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Set Budget"),
+        title: Text('Choose an Option'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(labelText: "Category"),
-              value: selectedCategory,
-              items: Hive.box<Category>('categories')
-                  .values
-                  .map((category) => DropdownMenuItem(
-                        value: category.name,
-                        child: Text(category.name),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                selectedCategory = value;
+            ListTile(
+              leading: Icon(Icons.account_balance_wallet, color: Colors.blue),
+              title: Text('Set Monthly Budget'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddBudgetDialog(); // Open Monthly Budget Dialog
               },
             ),
-            TextField(
-              decoration: InputDecoration(labelText: "Limit"),
-              keyboardType: TextInputType.number,
-              onChanged: (value) => limit = double.tryParse(value) ?? 0.0,
+            ListTile(
+              leading: Icon(Icons.category, color: Colors.green),
+              title: Text('Add Category Budget'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddCategoryDialog(); // Open Category Budget Dialog
+              },
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              if (selectedCategory != null && limit > 0) {
-                saveBudget(selectedCategory!, limit);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("Save"),
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
           ),
         ],
       ),
     );
   }
 
-  void saveBudget(String category, double limit) {
-    final budget = Budget(category: category, limit: limit, spent: 0.0);
-    budgetBox.put(category, budget);
-    setState(() {}); // Refresh UI
+  Future<void> _loadBudgets() async {
+    var budgetData = await _budgetService.getMonthlyBudget(monthYear);
+    var categoryData = await _budgetService.getCategoryBudgets(monthYear);
+    double totalSpent = await _getMonthlyExpenses(monthYear);
+
+    for (var category in categoryData) {
+      double categorySpent = await _budgetService.getCategoryMonthlyExpense(
+          monthYear, category['category']);
+      category['budget'] = category['budget'];
+      category['spent'] = categorySpent;
+      category['available'] = category['budget'] - categorySpent;
+    }
+
+    setState(() {
+      monthlyBudget = budgetData ?? {'totalBudget': 0, 'availableBudget': 0};
+      monthlyBudget!['totalSpent'] = totalSpent;
+      monthlyBudget!['availableBudget'] =
+          (monthlyBudget!['totalBudget'] ?? 0) - totalSpent;
+      categories = categoryData;
+    });
   }
 
-  void _deleteBudget(String category) {
-    budgetBox.delete(category);
-    setState(() {}); // Refresh UI
+  String _getCurrentMonthYear() {
+    List<String> monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ];
+    DateTime now = DateTime.now();
+    return "${monthNames[now.month - 1]} ${now.year}";
+  }
+
+  Future<double> _getMonthlyExpenses(String monthYear) async {
+    QuerySnapshot querySnapshot =
+        await FirebaseFirestore.instance.collection('transactions').get();
+
+    double totalSpent = 0.0;
+    for (var doc in querySnapshot.docs) {
+      var data = doc.data() as Map<String, dynamic>;
+      if (data['transactionType'] == "Expense") {
+        DateTime transactionDate = DateTime.parse(data['date']);
+        String transactionMonthYear =
+            "${_getCurrentMonthName(transactionDate.month)} ${transactionDate.year}";
+
+        if (transactionMonthYear == monthYear) {
+          totalSpent += double.tryParse(data['amount'].toString()) ?? 0.0;
+        }
+      }
+    }
+    return totalSpent;
+  }
+
+  String _getCurrentMonthName(int month) {
+    List<String> monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ];
+    return monthNames[month - 1];
+  }
+
+  void _showAddBudgetDialog() {
+    TextEditingController budgetController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Set Monthly Budget'),
+        content: TextField(
+          controller: budgetController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(hintText: "Enter budget amount"),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              double amount = double.tryParse(budgetController.text) ?? 0;
+              if (amount > 0) {
+                await _budgetService.addMonthlyBudget(amount, monthYear);
+                _loadBudgets();
+              }
+              Navigator.pop(context);
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddCategoryDialog() {
+    TextEditingController categoryController = TextEditingController();
+    TextEditingController amountController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add Category Budget'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: categoryController,
+              decoration: InputDecoration(hintText: "Enter category name"),
+            ),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(hintText: "Enter budget amount"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              String category = categoryController.text.trim();
+              double amount = double.tryParse(amountController.text) ?? 0;
+              if (category.isNotEmpty && amount > 0) {
+                await _budgetService.addCategoryBudget(
+                    monthYear, category, amount);
+                _loadBudgets();
+              }
+              Navigator.pop(context);
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Budget> budgets = budgetBox.values.toList();
-
-    return BaseScreen(
-      title: "Budgeting",
-      currentIndex: 2,
-      body: Column(
-        children: [
-          ElevatedButton(
-              onPressed: _addBudgetDialog, child: Text("Add Budget")),
-          Expanded(
-            child: ListView.builder(
-              itemCount: budgets.length,
-              itemBuilder: (context, index) {
-                Budget budget = budgets[index];
-                double spent = budget.spent;
-                double limit = budget.limit;
-                double percentage = spent / limit;
-
-                return ListTile(
-                  title: Text("${budget.category} - ₹$spent / ₹$limit"),
-                  subtitle: LinearProgressIndicator(
-                    value: percentage.clamp(0.0, 1.0),
-                    backgroundColor: Colors.grey[300],
-                    color: percentage > 0.8 ? Colors.red : Colors.green,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar:
+          AppBar(title: Text("Budget Analysis"), backgroundColor: Colors.black),
+      body: monthlyBudget == null
+          ? Center(
+              child: Text("No budget set. Tap + to add a budget.",
+                  style: TextStyle(color: Colors.white)),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Budget Overview
+                  Card(
+                    color: Colors.grey[900],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("$monthYear",
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 18)),
+                          SizedBox(height: 8),
+                          Text("Budget: ₹${monthlyBudget!['totalBudget']}",
+                              style: TextStyle(color: Colors.grey)),
+                          SizedBox(height: 16),
+                          Text("Total Spent: ₹${monthlyBudget!['totalSpent']}",
+                              style: TextStyle(color: Colors.red)),
+                          Text(
+                              "Available Budget: ₹${monthlyBudget!['availableBudget']}",
+                              style: TextStyle(color: Colors.green)),
+                        ],
+                      ),
+                    ),
                   ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      _deleteBudget(budget.category);
-                    },
+                  SizedBox(height: 16),
+
+                  // Category Budgets
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        var category = categories[index];
+                        return Card(
+                          color: Colors.grey[850],
+                          margin: EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            title: Text(category['category'],
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Budget: ₹${category['budget']}",
+                                    style: TextStyle(color: Colors.grey)),
+                                Text("Spent: ₹${category['spent']}",
+                                    style: TextStyle(color: Colors.red)),
+                                Text("Available: ₹${category['available']}",
+                                    style: TextStyle(color: Colors.green)),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ),
-        ],
+      
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blue,
+        child: Icon(Icons.add),
+        onPressed: () {
+          _showBudgetOptionsDialog();
+        },
       ),
     );
   }

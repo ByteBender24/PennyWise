@@ -98,7 +98,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/addExpense': (context) => AddExpenseScreen(),
         '/analytics': (context) => AnalysisScreen(),
-        '/budgeting': (context) => BudgetScreen(),
+        '/budgeting': (context) => BudgetingScreen(),
         '/more': (context) => SettingsScreen(),
         '/all_categories': (context) => const CategoriesScreen(),
         '/all_expenses': (context) => const AllExpensesScreen(),

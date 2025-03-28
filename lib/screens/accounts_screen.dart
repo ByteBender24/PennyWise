@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   initialRoute: '/all_accounts',
   routes: {
     '/analytics': (context) => AnalysisScreen(),
-    '/budgeting': (context) => BudgetScreen(),
+    '/budgeting': (context) => BudgetingScreen(),
     '/more': (context) => SettingsScreen(),
     '/home': (context) => const HomeScreen()
   },
